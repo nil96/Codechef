@@ -5,13 +5,11 @@
 #include<vector>
 #include<math.h>
 #include<limits.h>
-#include<list>
 #define lli long long int
 #define mod 1000000007
 using namespace std;
 lli N,K,Q;
 lli arr[10000009];
-lli ans[10000009];
 lli a,b,c,d,e,f,r,s,t,m;
 lli L1,La,Lc,Lm,D1,Da,Dc,Dm;
 lli pow_t[100000009];
@@ -30,9 +28,9 @@ lli generate_arr()
   for(lli x=2;x<=N;x++)
   {
     if(pow_t[x]%s<=r)
-       arr[x]=(a*arr[x-1]*arr[x-1]+b*arr[x-1] +c)%m;
+       arr[x]=(  ( ( ((a*arr[x-1])%m) *arr[x-1] )%m  +  (b*arr[x-1])%m )%m +c)%m;
     else
-       arr[x]=(d*arr[x-1]*arr[x-1]+e*arr[x-1] +f)%m;
+       arr[x]=(  ( ( ((d*arr[x-1])%m) *arr[x-1] )%m  +  (e*arr[x-1])%m )%m +f)%m;
        //arr[x]=(d*arr[x-1]*arr[x-1]+e*arr[x-1]+f)%m;
   }
   for(lli x=0;x<N;x++)
@@ -40,73 +38,53 @@ lli generate_arr()
     arr[x]=arr[x+1];
   }
 }
+lli max_size=0;
  
  
-void fun()
+ 
+lli get_size()
 {
-   //lli arr[]={4,3,2,1};
-   //lli len=sizeof(arr)/sizeof(lli);
-   lli len=N;
-   list<lli> p;
-   p.clear();
-   lli k=K;
-   for(lli i=0;i<len;i++)
-   {
-       if(i>=k)
-         ans[i-k]=p.front();
-       while(!p.empty()  && p.back()>arr[i])
-         p.pop_back();
-       p.push_back(arr[i]);
-      if(i>=k && arr[i-k]==p.front()){
-         p.pop_front();
-      }
-   }
-   lli min1=LONG_LONG_MAX;
-   for(lli i=len-k;i<len;i++)
-   {
-      if(min1>arr[i])
-        min1=arr[i];
-   }
-   for(lli i=len-k;i<len;i++)
-   {
-        ans[i]=min1;
-   }
- 
- /* printf("ans \n");
-   for(lli i=0;i<len;i++)
-   {
-      printf("%lld ",ans[i]);
-   }
-   printf("ans\n");*/
+    max_size=4*(N-1);
 }
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-lli query(lli qs,lli qe)
+lli get_sum(lli*st,lli ss,lli se,lli qs,lli qe,lli index)
 {
-  return min(ans[qs],ans[qe-K+1]);
+  if(qs<=ss && qe>=se)
+    return st[index];
+  if(se<qs || ss>qe)
+    return LONG_LONG_MAX;
+  lli mid=(ss+se)/2;
+  return min( get_sum(st,ss,mid,qs,qe,2*index+1),
+         get_sum(st,mid+1,se,qs,qe,2*index+2)  );
 }
+ 
+lli csumuntill(lli ss,lli se,lli *st,lli si)
+{
+  if(ss==se)
+  {
+    st[si]=arr[ss];
+    return arr[ss];
+  }
+  lli mid=(ss+se)/2;
+  st[si]=  min (csumuntill(ss,mid,st,si*2+1),
+                 csumuntill(mid+1,se,st,si*2+2) );
+  return st[si];
+}
+lli* csum()
+{
+   get_size();
+   lli * sum_tree=(lli *)malloc(sizeof(lli)*max_size);
+   csumuntill(0,N-1,sum_tree,0);
+   return sum_tree;
+}
+ 
  
  
 void generate_range()
 {
-   //lli * tree=csum();
+   lli * tree=csum();
    lli sum=0;
    lli prdct=1;
-   fun();
    for(lli i=1;i<=Q;i++)
    {
       L1=(La*L1+Lc)%Lm;
@@ -117,9 +95,12 @@ void generate_range()
       //printf("L===%lld R====%lld\n",L,R);
       lli qs=L-1;
       lli qe=R-1;
+      if(qs>qe)
+        swap(qs,qe);
+    //  printf("qs===%lld qe====%lld\n",qs,qe);
  
-      lli zuck;
-      zuck=query(qs,qe);
+      lli zuck=get_sum(tree,0,N-1,qs,qe,0);
+      //printf("zuck===%lld\n",zuck);
       sum=sum+zuck;
       prdct=(prdct*zuck)%mod;
    }
